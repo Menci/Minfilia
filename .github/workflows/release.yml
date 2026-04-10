@@ -3,6 +3,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -19,7 +22,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          prefix=$(grep -oPm1 '(?<=<VersionPrefix>)[^<]+' Directory.Build.props)
+          prefix=$(sed -n 's/.*<VersionPrefix>\([^<]*\)<\/VersionPrefix>.*/\1/p' Directory.Build.props | head -1)
           echo "version=${prefix}.$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Build
