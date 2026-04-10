@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>Minfilia</RootNamespace>
+    <AssemblyName>Minfilia</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="dotnetCampus.LatestCSharpFeatures" />
+  </ItemGroup>
+
+  <!-- Depend on Minfilia.Impl and BuildTasks builds -->
+  <ItemGroup>
+    <ProjectReference Include="..\Minfilia.Impl\Minfilia.Impl.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\Minfilia.BuildTasks\Minfilia.BuildTasks.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!-- Step 1: Copy BuildTasks DLL and its dependencies -->
+  <Target Name="CopyBuildTasksDll" AfterTargets="Build">
+    <Copy
+      SourceFiles="..\Minfilia.BuildTasks\bin\$(Configuration)\netstandard2.0\Minfilia.BuildTasks.dll"
+      DestinationFiles="$(OutputPath)Minfilia.BuildTasks.dll"
+      SkipUnchangedFiles="false" />
+    <Copy
+      SourceFiles="..\Minfilia.BuildTasks\bin\$(Configuration)\netstandard2.0\Mono.Cecil.dll"
+      DestinationFiles="$(OutputPath)Mono.Cecil.dll"
+      SkipUnchangedFiles="false" />
+  </Target>
+
+  <!-- Step 2: Register and run BundleTask -->
+  <UsingTask TaskName="BundleTask" TaskFactory="TaskHostFactory"
+             AssemblyFile="$(OutputPath)Minfilia.BuildTasks.dll" />
+
+  <Target Name="Bundle" AfterTargets="CopyBuildTasksDll">
+    <BundleTask
+      EntryPoint="..\Minfilia.Impl\bin\$(Configuration)\net48\Minfilia.Impl.exe"
+      Target="$(OutputPath)$(AssemblyName).exe" />
+  </Target>
+</Project>

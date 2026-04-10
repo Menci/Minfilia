@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Minfilia.BuildTasks/Minfilia.BuildTasks.csproj" />
+    <Project Path="src/Minfilia.Impl/Minfilia.Impl.csproj" />
+    <Project Path="src/Minfilia/Minfilia.csproj" />
+  </Folder>
+</Solution>
