@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -69,34 +70,69 @@ internal sealed class OutlookSession : IDisposable
     {
         try
         {
-            var type = Type.GetTypeFromProgID("Outlook.Application");
-            if (type == null)
+            try
             {
-                _ready.SetException(new InvalidOperationException(
-                    "Outlook.Application COM class not found. Is Outlook installed?"));
+                var type = Type.GetTypeFromProgID("Outlook.Application");
+                if (type == null)
+                {
+                    _ready.SetException(new InvalidOperationException(
+                        "Outlook.Application COM class not found. Is Outlook installed?"));
+                    return;
+                }
+
+                _outlook = Activator.CreateInstance(type);
+                _namespace = _outlook!.GetNamespace("MAPI");
+                _namespace!.Logon();
+                _ready.SetResult(true);
+            }
+            catch (Exception ex)
+            {
+                _ready.SetException(ex);
                 return;
             }
 
-            _outlook = Activator.CreateInstance(type);
-            _namespace = _outlook!.GetNamespace("MAPI");
-            _namespace!.Logon();
-            _ready.SetResult(true);
+            try
+            {
+                foreach (var action in _queue.GetConsumingEnumerable(_cts.Token))
+                {
+                    action();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
-        catch (Exception ex)
+        finally
         {
-            _ready.SetException(ex);
-            return;
+            ReleaseComObjects();
         }
+    }
+
+    private void ReleaseComObjects()
+    {
+        var namespaceObject = (object?)_namespace;
+        var outlookObject = (object?)_outlook;
+
+        _namespace = null;
+        _outlook = null;
+
+        ReleaseComObject(namespaceObject, "namespace");
+        ReleaseComObject(outlookObject, "application");
+    }
+
+    private static void ReleaseComObject(object? comObject, string name)
+    {
+        if (comObject == null)
+            return;
 
         try
         {
-            foreach (var action in _queue.GetConsumingEnumerable(_cts.Token))
-            {
-                action();
-            }
+            if (Marshal.IsComObject(comObject))
+                Marshal.FinalReleaseComObject(comObject);
         }
-        catch (OperationCanceledException)
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"Warning: failed to release Outlook {name} COM object: {ex.Message}");
         }
     }
 

@@ -10,7 +10,7 @@ using Minfilia.Outlook;
 namespace Minfilia.Tools;
 
 [McpServerToolType]
-internal sealed class SearchTools(OutlookSession _session)
+internal sealed class SearchTools(OutlookOperationExecutor _executor)
 {
     private const int ScanLimit = 5000;
 
@@ -40,7 +40,7 @@ internal sealed class SearchTools(OutlookSession _session)
         if (dateFromValue != null && dateToValue != null)
             InputValidator.ValidateDateRange(dateFromValue.Value, dateToValue.Value, dateFrom, dateTo);
 
-        return await _session.ExecuteAsync(ns =>
+        return await _executor.ExecuteAsync(ns =>
         {
             var targetFolder = FolderResolver.ResolveMailFolderOrDefault(ns, folderPath);
 

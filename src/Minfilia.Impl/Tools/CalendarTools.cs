@@ -10,7 +10,7 @@ using Minfilia.Outlook;
 namespace Minfilia.Tools;
 
 [McpServerToolType]
-internal sealed class CalendarTools(OutlookSession _session)
+internal sealed class CalendarTools(OutlookOperationExecutor _executor)
 {
     [McpServerTool(Name = "list_calendars", ReadOnly = true, Destructive = false, OpenWorld = false)]
     [Description("List all calendar folders across Outlook stores. The default calendar is flagged with isDefault=true and listed first. itemCount may be missing when Outlook does not expose it.")]
@@ -19,7 +19,7 @@ internal sealed class CalendarTools(OutlookSession _session)
     {
         storeName = InputValidator.NullIfWhiteSpace(storeName);
 
-        return await _session.ExecuteAsync(ns =>
+        return await _executor.ExecuteAsync(ns =>
         {
             var result = new List<CalendarInfo>();
             var storeCount = (int)ns.Stores.Count;
@@ -75,7 +75,7 @@ internal sealed class CalendarTools(OutlookSession _session)
         var prefilterStart = InputValidator.FormatDate(exactRangeStart.AddDays(-1));
         var prefilterEnd = InputValidator.FormatDate(exactRangeEndExclusive.AddDays(1));
 
-        return await _session.ExecuteAsync(ns =>
+        return await _executor.ExecuteAsync(ns =>
         {
             var calendar = calendarPath != null
                 ? FolderResolver.ResolveCalendarFolder(ns, calendarPath)

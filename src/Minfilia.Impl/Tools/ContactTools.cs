@@ -9,7 +9,7 @@ using Minfilia.Outlook;
 namespace Minfilia.Tools;
 
 [McpServerToolType]
-internal sealed class ContactTools(OutlookSession _session)
+internal sealed class ContactTools(OutlookOperationExecutor _executor)
 {
     [McpServerTool(Name = "search_contacts", ReadOnly = true, Destructive = false, OpenWorld = false)]
     [Description("Search Outlook contacts by name, email, company, or job title. Returns truncated=true when maxResults cuts off additional matches, skippedFolders for contact folders that could not be enumerated, and mayHaveMissedMatches=true when some items could not be fully inspected during matching.")]
@@ -20,7 +20,7 @@ internal sealed class ContactTools(OutlookSession _session)
         query = InputValidator.RequireNonBlank(query, "query");
         maxResults = InputValidator.ValidateMaxResults(maxResults);
 
-        return await _session.ExecuteAsync(ns =>
+        return await _executor.ExecuteAsync(ns =>
         {
             var state = new ContactSearchState();
             var queryLower = query.ToLowerInvariant();

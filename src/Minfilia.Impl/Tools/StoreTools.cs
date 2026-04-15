@@ -9,13 +9,13 @@ using Minfilia.Outlook;
 namespace Minfilia.Tools;
 
 [McpServerToolType]
-internal sealed class StoreTools(OutlookSession _session)
+internal sealed class StoreTools(OutlookOperationExecutor _executor)
 {
     [McpServerTool(Name = "list_stores", ReadOnly = true, Destructive = false, OpenWorld = false)]
     [Description("List Outlook stores. Email may be missing when Outlook does not expose SMTP or account-to-store binding.")]
     public async Task<List<StoreInfo>> ListStores()
     {
-        return await _session.ExecuteAsync<List<StoreInfo>>(ns =>
+        return await _executor.ExecuteAsync<List<StoreInfo>>(ns =>
         {
             var stores = new List<StoreInfo>();
             var storeCount = (int)ns.Stores.Count;
@@ -92,7 +92,7 @@ internal sealed class StoreTools(OutlookSession _session)
         parentPath = InputValidator.NullIfWhiteSpace(parentPath);
         maxDepth = InputValidator.ValidateMaxResults(maxDepth, 0, 10, "maxDepth");
 
-        return await _session.ExecuteAsync(ns =>
+        return await _executor.ExecuteAsync(ns =>
         {
             var result = new List<FolderInfo>();
 

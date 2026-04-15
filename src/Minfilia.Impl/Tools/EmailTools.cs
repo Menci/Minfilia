@@ -8,7 +8,7 @@ using Minfilia.Outlook;
 namespace Minfilia.Tools;
 
 [McpServerToolType]
-internal sealed class EmailTools(OutlookSession _session)
+internal sealed class EmailTools(OutlookOperationExecutor _executor)
 {
     [McpServerTool(Name = "get_email", ReadOnly = true, Destructive = false, OpenWorld = false)]
     [Description("Get the full content of an email by its EntryID.")]
@@ -17,7 +17,7 @@ internal sealed class EmailTools(OutlookSession _session)
     {
         id = InputValidator.RequireNonBlank(id, "id");
 
-        return await _session.ExecuteAsync(ns =>
+        return await _executor.ExecuteAsync(ns =>
         {
             var item = ItemResolver.ResolveItemById(ns, id);
             return ItemMapper.ToEmailDetail(item, id);
@@ -35,7 +35,7 @@ internal sealed class EmailTools(OutlookSession _session)
         folderPath = InputValidator.NullIfWhiteSpace(folderPath);
         maxResults = InputValidator.ValidateMaxResults(maxResults);
 
-        return await _session.ExecuteAsync(ns =>
+        return await _executor.ExecuteAsync(ns =>
         {
             var targetFolder = FolderResolver.ResolveMailFolderOrDefault(ns, folderPath);
 

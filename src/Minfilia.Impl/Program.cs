@@ -29,30 +29,16 @@ internal static class Program
             return;
         }
 
-        Console.WriteLine("Initializing Outlook COM session...");
-        using var session = new OutlookSession();
-
-        try
-        {
-            await session.WaitForReadyAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"Failed to connect to Outlook: {ex.Message}");
-            Console.Error.WriteLine("Make sure Outlook is running.");
-            return;
-        }
-
-        Console.WriteLine("Outlook connected.");
+        var executor = new OutlookOperationExecutor();
 
         // Explicit tool registration with injected dependencies
         var toolInstances = new object[]
         {
-            new StoreTools(session),
-            new SearchTools(session),
-            new EmailTools(session),
-            new CalendarTools(session),
-            new ContactTools(session),
+            new StoreTools(executor),
+            new SearchTools(executor),
+            new EmailTools(executor),
+            new CalendarTools(executor),
+            new ContactTools(executor),
         };
 
         var tools = new McpServerPrimitiveCollection<McpServerTool>();
