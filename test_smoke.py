@@ -17,7 +17,7 @@ Covers all behavioral fixes from review rounds 1-3:
   - Models are typed and expose explicit failure states
 
 Usage:
-    1. Start the server:  Minfilia.exe [port]
+    1. Start the server:  Minfilia.exe mcp [--port PORT]
     2. Run tests:         python test_smoke.py [port]
 """
 

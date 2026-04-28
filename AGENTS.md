@@ -19,7 +19,7 @@ Minfilia               → Single-file exe entry point (Loader.cs unpacks embedd
 
 ## Key files
 
-- `src/Minfilia.Impl/Program.cs` — Entry point, tool registration, server startup
+- `src/Minfilia.Impl/Program.cs` — Entry point, CLI dispatch, tool registration, server startup
 - `src/Minfilia.Impl/Http/McpHttpServer.cs` — HttpListener ↔ StreamableHttpServerTransport glue (~120 lines)
 - `src/Minfilia.Impl/Outlook/OutlookSession.cs` — COM singleton on dedicated STA thread, all COM calls marshaled via BlockingCollection
 - `src/Minfilia.Impl/Tools/*.cs` — MCP tool implementations (StoreTools, SearchTools, EmailTools, CalendarTools, ContactTools)
@@ -62,10 +62,10 @@ This builds all 3 projects in dependency order (BuildTasks → Minfilia.Impl →
 
 ## Testing
 
-Start the server, then verify with curl:
+Start the MCP server, then verify with curl:
 
 ```bash
-Minfilia.exe 3027
+Minfilia.exe mcp --port 3027
 
 # In another terminal:
 curl -X POST http://localhost:3027/ \

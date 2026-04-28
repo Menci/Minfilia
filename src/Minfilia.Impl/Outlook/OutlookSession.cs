@@ -10,8 +10,7 @@ internal sealed class OutlookSession : IDisposable
 {
     private readonly Thread _staThread;
     private readonly BlockingCollection<Action> _queue = [];
-    private readonly TaskCompletionSource<bool> _ready = new();
-    private readonly CancellationTokenSource _cts = new();
+    private readonly TaskCompletionSource<bool> _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private dynamic? _outlook;
     private dynamic? _namespace;
@@ -28,10 +27,8 @@ internal sealed class OutlookSession : IDisposable
 
     public Task ExecuteAsync(Action<dynamic> action)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(OutlookSession));
-
-        var tcs = new TaskCompletionSource<bool>();
-        _queue.Add(() =>
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Enqueue(() =>
         {
             try
             {
@@ -48,10 +45,8 @@ internal sealed class OutlookSession : IDisposable
 
     public Task<T> ExecuteAsync<T>(Func<dynamic, T> func)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(OutlookSession));
-
-        var tcs = new TaskCompletionSource<T>();
-        _queue.Add(() =>
+        var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+        Enqueue(() =>
         {
             try
             {
@@ -64,6 +59,21 @@ internal sealed class OutlookSession : IDisposable
             }
         });
         return tcs.Task;
+    }
+
+    private void Enqueue(Action action)
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(OutlookSession));
+
+        try
+        {
+            _queue.Add(action);
+        }
+        catch (InvalidOperationException) when (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(OutlookSession));
+        }
     }
 
     private void StaThreadLoop()
@@ -91,15 +101,9 @@ internal sealed class OutlookSession : IDisposable
                 return;
             }
 
-            try
+            foreach (var action in _queue.GetConsumingEnumerable())
             {
-                foreach (var action in _queue.GetConsumingEnumerable(_cts.Token))
-                {
-                    action();
-                }
-            }
-            catch (OperationCanceledException)
-            {
+                action();
             }
         }
         finally
@@ -141,11 +145,13 @@ internal sealed class OutlookSession : IDisposable
         if (_disposed) return;
         _disposed = true;
 
-        _cts.Cancel();
         _queue.CompleteAdding();
-        _staThread.Join(TimeSpan.FromSeconds(5));
+        if (!_staThread.Join(TimeSpan.FromSeconds(5)))
+        {
+            Console.Error.WriteLine("Warning: Outlook STA thread did not stop within 5 seconds.");
+            return;
+        }
 
         _queue.Dispose();
-        _cts.Dispose();
     }
 }
